@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>網頁版排班 App 原型</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #edf0f2;
+        --surface: #ffffff;
+        --surface-2: #f4f6f7;
+        --ink: #1b2732;
+        --ink-soft: #51606d;
+        --line: #d3dade;
+        --line-strong: #aebac2;
+        --accent: #0e6b5c;
+        --accent-ink: #ffffff;
+        --a1: #b45309; --a1-bg: #fdf0dc;
+        --a2: #a16207; --a2-bg: #fdf6d8;
+        --p1: #1d4ed8; --p1-bg: #dfe9fd;
+        --off: #c22424; --off-bg: #fdeaea;
+        --al: #be185d; --al-bg: #fbe4ee;
+        --weekend: #e8edf5;
+        --danger: #b91c1c;
+        --ok: #15803d;
+        --shadow: 0 1px 2px rgba(20, 35, 50, .07), 0 6px 18px rgba(20, 35, 50, .06);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --bg: #0e141a;
+          --surface: #17212a;
+          --surface-2: #1d2934;
+          --ink: #e7edf2;
+          --ink-soft: #9db0bf;
+          --line: #2c3a46;
+          --line-strong: #43566a;
+          --accent: #2ea88f;
+          --accent-ink: #06231c;
+          --a1: #f2b25c; --a1-bg: #3d2c12;
+          --a2: #ecd27a; --a2-bg: #3a3414;
+          --p1: #8db1f7; --p1-bg: #1d2f52;
+          --off: #f28b8b; --off-bg: #422222;
+          --al: #f2a0c4; --al-bg: #40202f;
+          --weekend: #1a2635;
+          --danger: #f08585;
+          --ok: #6fce8f;
+          --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      button, input, select { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+
+      .wrap { max-width: 1560px; margin: 0 auto; padding: 18px 16px 48px; }
+
+      /* ---------- control bar ---------- */
+      .controls {
+        display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 18px; box-shadow: var(--shadow);
+      }
+      .controls .group { display: flex; flex-direction: column; gap: 5px; }
+      .controls label.lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); }
+      .monthpick { display: flex; gap: 8px; align-items: center; }
+      .monthpick select {
+        padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 7px;
+        background: var(--surface); font-weight: 700; font-size: 16px;
+      }
+      .monthmeta { font-size: 13px; color: var(--ink-soft); }
+      .monthmeta b { color: var(--ink); }
+      .spacer { flex: 1; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .btn {
+        border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink);
+        border-radius: 8px; padding: 9px 16px; font-weight: 700; font-size: 14px;
+      }
+      .btn:hover { border-color: var(--ink-soft); }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-size: 15px; padding: 9px 22px; }
+      .btn.primary:hover { filter: brightness(1.08); }
+      .btn.danger-ghost { color: var(--danger); }
+
+      /* ---------- brush toolbar ---------- */
+      .toolbar {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        margin-top: 12px; background: var(--surface); border: 1px solid var(--line);
+        border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow);
+      }
+      .toolbar .tlabel { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); margin-right: 2px; }
+      .brush {
+        border: 2px solid var(--line); background: var(--surface); border-radius: 8px;
+        padding: 6px 14px; font-weight: 900; font-size: 14px; min-width: 58px;
+      }
+      .brush small { display: block; font-weight: 500; font-size: 11px; color: var(--ink-soft); letter-spacing: 0; }
+      .brush[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+      .brush.b-a1 { color: var(--a1); } .brush.b-a2 { color: var(--a2); }
+      .brush.b-p1 { color: var(--p1); } .brush.b-o { color: var(--off); } .brush.b-al { color: var(--al); }
+      .brush.lockmode[aria-pressed="true"] { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); color: var(--danger); }
+      .toolbar .hint { font-size: 12.5px; color: var(--ink-soft); margin-left: auto; max-width: 460px; }
+
+      /* ---------- grid ---------- */
+      .grid-card {
+        margin-top: 12px; background: var(--surface); border: 1px solid var(--line);
+        border-radius: 10px; box-shadow: var(--shadow); overflow: hidden;
+      }
+      .grid-scroll { overflow-x: auto; }
+      table.roster { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+      table.roster th, table.roster td {
+        border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+        text-align: center; padding: 0; white-space: nowrap;
+      }
+      table.roster thead th {
+        background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--ink-soft);
+        padding: 5px 2px; position: sticky; top: 0; z-index: 3;
+      }
+      thead th .dow { display: block; font-size: 11px; font-weight: 500; }
+      thead th.weekend { background: var(--weekend); color: var(--ink); }
+      td.day.weekend, th.day.weekend { background: color-mix(in srgb, var(--weekend) 55%, transparent); }
+      /* sticky identity columns */
+      .col-name { position: sticky; left: 0; z-index: 2; background: var(--surface); min-width: 168px; text-align: left !important; }
+      thead .col-name { z-index: 4; background: var(--surface-2); }
+      .col-prev { min-width: 46px; background: var(--surface-2) !important; }
+      thead .col-prev { background: var(--weekend) !important; }
+      .col-stat { min-width: 52px; background: var(--surface-2); font-weight: 900; font-size: 14px; }
+      thead .col-stat { font-size: 11px; line-height: 1.3; }
+
+      .staffcell { display: flex; align-items: center; gap: 6px; padding: 4px 8px; }
+      .staffcell input[type="text"] {
+        width: 74px; border: 1px solid transparent; background: transparent; border-radius: 5px;
+        padding: 3px 5px; font-weight: 700; font-size: 14px;
+      }
+      .staffcell input[type="text"]:hover, .staffcell input[type="text"]:focus { border-color: var(--line-strong); background: var(--surface); outline: none; }
+      .staffcell select {
+        border: 1px solid var(--line); border-radius: 5px; background: var(--surface);
+        font-size: 12px; font-weight: 700; padding: 3px 2px;
+      }
+      .staffcell .del {
+        border: none; background: none; color: var(--ink-soft); font-size: 16px; line-height: 1;
+        padding: 2px 4px; border-radius: 5px;
+      }
+      .staffcell .del:hover { color: var(--danger); background: var(--off-bg); }
+
+      td.day, td.prev { padding: 0; }
+      .cell {
+        display: block; width: 100%; min-width: 40px; height: 36px; border: none; background: transparent;
+        font-weight: 700; font-size: 13.5px; padding: 0; position: relative;
+      }
+      .cell:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+      .cell.v-A1 { color: var(--a1); background: var(--a1-bg); }
+      .cell.v-A2 { color: var(--a2); background: var(--a2-bg); }
+      .cell.v-P1 { color: var(--p1); background: var(--p1-bg); }
+      .cell.v-O  { color: var(--off); background: var(--off-bg); }
+      .cell.v-AL { color: var(--al); background: var(--al-bg); }
+      .cell.locked span { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+      .cell.auto { opacity: .92; }
+      td.summary { font-size: 12.5px; color: var(--ink-soft); background: var(--surface-2); font-weight: 700; padding: 4px 2px !important; }
+      td.summary b { color: var(--ink); }
+      td.summary.bad { color: var(--danger); }
+      .addstaff { margin: 10px 14px 14px; }
+
+      /* ---------- report / legend ---------- */
+      .below { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-top: 12px; }
+      @media (max-width: 860px) { .below { grid-template-columns: 1fr; } }
+      .panel {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 18px; box-shadow: var(--shadow);
+      }
+      .panel h2 { font-size: 15px; margin: 0 0 8px; font-family: "Noto Serif TC", serif; }
+      .panel p, .panel li { font-size: 13.5px; }
+      .panel ul { margin: 6px 0; padding-left: 20px; }
+      .ok-msg { color: var(--ok); font-weight: 700; }
+      .viol li { color: var(--danger); }
+      .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+      .legend .sw { display: inline-block; padding: 1px 8px; border-radius: 5px; font-weight: 900; margin-right: 5px; }
+      .sw-A1 { color: var(--a1); background: var(--a1-bg); } .sw-A2 { color: var(--a2); background: var(--a2-bg); }
+      .sw-P1 { color: var(--p1); background: var(--p1-bg); } .sw-O { color: var(--off); background: var(--off-bg); }
+      .sw-AL { color: var(--al); background: var(--al-bg); }
+      .rules { font-size: 13px; color: var(--ink-soft); }
+      .rules li { margin-bottom: 3px; }
+      .rules b { color: var(--ink); }
+
+      .toast {
+        position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+        background: var(--ink); color: var(--bg); padding: 11px 20px; border-radius: 9px;
+        font-weight: 700; font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s ease;
+        max-width: min(92vw, 560px); text-align: center; z-index: 50; box-shadow: var(--shadow);
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- controls -->
+      <div class="controls">
+        <div class="group">
+          <label class="lbl" for="selYear">排班月份</label>
+          <div class="monthpick">
+            <select id="selYear" aria-label="年份"></select>
+            <select id="selMonth" aria-label="月份"></select>
+          </div>
+        </div>
+        <div class="group">
+          <label class="lbl">本月資料</label>
+          <div class="monthmeta" id="monthMeta"></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button class="btn" id="btnClearAuto" type="button">清除編更</button>
+          <button class="btn danger-ghost" id="btnClearAll" type="button">全部清空</button>
+          <button class="btn" id="btnExport" type="button">匯出 Excel</button>
+          <button class="btn primary" id="btnAuto" type="button">自動編更</button>
+        </div>
+      </div>
+
+      <!-- brush toolbar -->
+      <div class="toolbar" role="group" aria-label="填格工具">
+        <span class="tlabel">填格筆</span>
+        <button class="brush b-a1" data-brush="A1" aria-pressed="true" type="button">A1<small>早班</small></button>
+        <button class="brush b-a2" data-brush="A2" aria-pressed="false" type="button">A2<small>早班（補充）</small></button>
+        <button class="brush b-p1" data-brush="P1" aria-pressed="false" type="button">P1<small>晚班</small></button>
+        <button class="brush b-o" data-brush="O" aria-pressed="false" type="button">O<small>例假</small></button>
+        <button class="brush b-al" data-brush="AL" aria-pressed="false" type="button">AL<small>年假</small></button>
+        <button class="brush" data-brush="" aria-pressed="false" type="button">清除<small>空格</small></button>
+        <button class="brush lockmode" id="btnLockMode" aria-pressed="false" type="button">底線<small>特別要求</small></button>
+        <span class="hint">先用填格筆點格仔填班／填假；開「底線」模式再點格仔，可標記或取消特別要求（底線格仔在自動編更時會鎖定不改）。第一欄灰色格是上月最後一日班次，編更時會一併考慮。</span>
+      </div>
+
+      <!-- roster grid -->
+      <div class="grid-card">
+        <div class="grid-scroll">
+          <table class="roster" id="rosterTable" aria-label="月班表"></table>
+        </div>
+        <button class="btn addstaff" id="btnAddStaff" type="button">＋ 新增員工</button>
+      </div>
+
+      <div class="below">
+        <section class="panel" aria-label="規則檢查">
+          <h2>規則檢查</h2>
+          <div id="report"></div>
+        </section>
+        <section class="panel" aria-label="圖例與規則">
+          <h2>班別圖例</h2>
+          <div class="legend">
+            <span><span class="sw sw-A1">A1</span>早班</span>
+            <span><span class="sw sw-A2">A2</span>早班補充</span>
+            <span><span class="sw sw-P1">P1</span>晚班</span>
+            <span><span class="sw sw-O">O</span>例假</span>
+            <span><span class="sw sw-AL">AL</span>年假</span>
+            <span><span style="text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; font-weight: 900;">A1</span>特別要求（底線）</span>
+          </div>
+          <h2 style="margin-top: 16px;">編更規則摘要</h2>
+          <ul class="rules">
+            <li><b>硬性：</b>每日 A1 需 4–5 人、P1 需 4–5 人、P1 不多於 A1、A2 不多於 2 人；若 A1 只有 4 人，必須有 A2 補充。</li>
+            <li><b>硬性：</b>每日放假（O＋AL）不多於 3 人；每人每月 5 天例假 O（不計 AL）。</li>
+            <li><b>硬性：</b>PCW 不可在 P1 後接 A1（LPCW 不受此限），並會考慮上月最後一日的班次。</li>
+            <li><b>盡量：</b>每人早班（A1＋A2）與晚班（P1）數量平均；PCW 在 P1 後可用 A2 轉接；放假前排 A1、放假後排 P1；盡量不連續工作 10 天以上。</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <script>
+    "use strict";
+    /* ================= state ================= */
+    const DUTIES = ["A1", "A2", "P1", "O", "AL"];
+    const DOW = ["日", "一", "二", "三", "四", "五", "六"];
+    let uid = 0;
+    function mkStaff(name, type) { return { id: ++uid, name, type }; }
+
+    const state = {
+      year: 2026, month: 11,           // month: 1-12
+      brush: "A1",
+      lockMode: false,
+      staff: [
+        mkStaff("PCW1", "PCW"), mkStaff("PCW2", "PCW"), mkStaff("PCW3", "PCW"),
+        mkStaff("PCW4", "PCW"), mkStaff("PCW5", "PCW"), mkStaff("PCW6", "PCW"),
+        mkStaff("PCW7", "PCW"), mkStaff("PCW8", "PCW"), mkStaff("PCW9", "PCW"),
+        mkStaff("LPCW1", "LPCW"), mkStaff("LPCW2", "LPCW"), mkStaff("LPCW3", "LPCW")
+      ],
+      /* cells[staffId] = { prev: {v, locked}, days: [ {v, locked, auto} x N ] } */
+      cells: {}
+    };
+
+    function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+    function blankCell() { return { v: "", locked: false, auto: false }; }
+
+    function ensureCells() {
+      const n = daysInMonth(state.year, state.month);
+      for (const s of state.staff) {
+        if (!state.cells[s.id]) state.cells[s.id] = { prev: blankCell(), days: [] };
+        const c = state.cells[s.id];
+        while (c.days.length < n) c.days.push(blankCell());
+        c.days.length = n;
+      }
+    }
+
+    /* ---- sample pre-fill (employee-submitted O/AL + two special requests) ---- */
+    (function seed() {
+      ensureCells();
+      const set = (name, day, v, locked) => {
+        const s = state.staff.find(x => x.name === name); if (!s) return;
+        const c = state.cells[s.id].days[day - 1]; c.v = v; c.locked = !!locked;
+      };
+      const setPrev = (name, v) => {
+        const s = state.staff.find(x => x.name === name); if (!s) return;
+        state.cells[s.id].prev.v = v;
+      };
+      // 上月最後一日 (31/10) 班次
+      [["PCW1","A1"],["PCW2","P1"],["PCW3","A1"],["PCW4","P1"],["PCW5","P1"],["PCW6","O"],
+       ["PCW7","A1"],["PCW8","P1"],["PCW9","A1"],["LPCW1","P1"],["LPCW2","A1"],["LPCW3","O"]
+      ].forEach(([n, v]) => setPrev(n, v));
+      // 員工先填的 O / AL
+      set("PCW1", 7, "O"); set("PCW1", 8, "O");
+      set("PCW2", 14, "O"); set("PCW2", 15, "O");
+      set("PCW6", 15, "AL"); set("PCW6", 16, "AL"); set("PCW6", 17, "AL"); set("PCW6", 18, "AL");
+      set("PCW9", 28, "O"); set("PCW9", 29, "O");
+      set("LPCW1", 3, "O"); set("LPCW1", 24, "O");
+      // 特別要求（底線，鎖定）
+      set("LPCW3", 7, "O", true); set("LPCW3", 8, "O", true);
+      set("PCW4", 21, "O", true); set("PCW4", 22, "O", true);
+    })();
+
+    /* ================= helpers ================= */
+    const $ = sel => document.querySelector(sel);
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    let toastTimer = null;
+    function toast(msg) {
+      const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3400);
+    }
+    function isWork(v) { return v === "A1" || v === "A2" || v === "P1"; }
+    function isEarly(v) { return v === "A1" || v === "A2"; }
+
+    function staffStats(sid) {
+      const days = state.cells[sid].days;
+      let early = 0, late = 0, o = 0, al = 0;
+      for (const c of days) {
+        if (isEarly(c.v)) early++;
+        else if (c.v === "P1") late++;
+        else if (c.v === "O") o++;
+        else if (c.v === "AL") al++;
+      }
+      return { early, late, o, al };
+    }
+
+    /* ================= validation =================
+       Returns { hard: [strings], emptyCount } for an arbitrary grid accessor.
+       getVal(sid, d) with d = -1 meaning prev-month last day. */
+    function validate(getVal, staffList, nDays) {
+      const hard = [];
+      // daily rules
+      for (let d = 0; d < nDays; d++) {
+        let a1 = 0, a2 = 0, p1 = 0, leave = 0;
+        for (const s of staffList) {
+          const v = getVal(s.id, d);
+          if (v === "A1") a1++; else if (v === "A2") a2++;
+          else if (v === "P1") p1++;
+          else if (v === "O" || v === "AL") leave++;
+        }
+        const day = d + 1;
+        if (a1 < 4 || a1 > 5) hard.push(`${day} 日：A1 有 ${a1} 人（需 4–5 人）`);
+        if (p1 < 4 || p1 > 5) hard.push(`${day} 日：P1 有 ${p1} 人（需 4–5 人）`);
+        if (p1 > a1) hard.push(`${day} 日：P1（${p1} 人）多於 A1（${a1} 人）`);
+        if (a2 > 2) hard.push(`${day} 日：A2 有 ${a2} 人（不可多於 2 人）`);
+        if (a1 === 4 && a2 < 1) hard.push(`${day} 日：A1 只有 4 人但沒有 A2 補充`);
+        if (leave > 3) hard.push(`${day} 日：放假有 ${leave} 人（不可多於 3 人）`);
+      }
+      // per-person rules
+      let emptyCount = 0;
+      for (const s of staffList) {
+        let oCount = 0;
+        for (let d = 0; d < nDays; d++) {
+          const v = getVal(s.id, d);
+          if (v === "") emptyCount++;
+          if (v === "O") oCount++;
+          if (s.type === "PCW") {
+            const prev = getVal(s.id, d - 1);
+            if (prev === "P1" && v === "A1") {
+              hard.push(`${s.name}：${d === 0 ? "1 日" : (d + 1) + " 日"} A1 緊接上一日 P1（PCW 不可）`);
+            }
+          }
+        }
+        if (oCount !== 5) hard.push(`${s.name}：例假 O 有 ${oCount} 天（需 5 天）`);
+      }
+      return { hard, emptyCount };
+    }
+
+    function currentGetVal(sid, d) {
+      const c = state.cells[sid];
+      if (d === -1) return c.prev.v;
+      return c.days[d].v;
+    }
+
+    /* ================= render ================= */
+    function render() {
+      ensureCells();
+      const { year, month } = state;
+      const n = daysInMonth(year, month);
+      const prevDate = new Date(year, month - 1, 0);
+      const prevLabel = `${prevDate.getDate()}/${prevDate.getMonth() + 1}`;
+
+      $("#selYear").value = String(year);
+      $("#selMonth").value = String(month);
+      const firstDow = new Date(year, month - 1, 1).getDay();
+      $("#monthMeta").innerHTML =
+        `<b>${year} 年 ${month} 月</b> · 共 ${n} 日 · 1 日為星期${DOW[firstDow]} · 員工 ${state.staff.length} 人`;
+
+      const t = $("#rosterTable");
+      let html = "<thead><tr>";
+      html += `<th class="col-name">員工</th>`;
+      html += `<th class="col-prev">上月尾<span class="dow">${prevLabel}</span></th>`;
+      for (let d = 1; d <= n; d++) {
+        const dow = new Date(year, month - 1, d).getDay();
+        const we = (dow === 0 || dow === 6) ? " weekend" : "";
+        html += `<th class="day${we}">${d}<span class="dow">${DOW[dow]}</span></th>`;
+      }
+      html += `<th class="col-stat">早班合計<br>A1+A2</th><th class="col-stat">晚班合計<br>P1</th>` +
+              `<th class="col-stat">例假<br>O</th><th class="col-stat">年假<br>AL</th>`;
+      html += "</tr></thead><tbody>";
+
+      for (const s of state.staff) {
+        const c = state.cells[s.id];
+        const st = staffStats(s.id);
+        html += "<tr>";
+        html += `<td class="col-name"><div class="staffcell">
+            <input type="text" value="${esc(s.name)}" data-name="${s.id}" aria-label="員工名稱" />
+            <select data-type="${s.id}" aria-label="員工類別">
+              <option value="PCW"${s.type === "PCW" ? " selected" : ""}>PCW</option>
+              <option value="LPCW"${s.type === "LPCW" ? " selected" : ""}>LPCW</option>
+            </select>
+            <button class="del" data-del="${s.id}" type="button" title="刪除員工" aria-label="刪除 ${esc(s.name)}">×</button>
+          </div></td>`;
+        html += `<td class="prev">${cellBtn(s.id, -1, c.prev)}</td>`;
+        for (let d = 0; d < n; d++) {
+          const dow = new Date(year, month - 1, d + 1).getDay();
+          const we = (dow === 0 || dow === 6) ? " weekend" : "";
+          html += `<td class="day${we}">${cellBtn(s.id, d, c.days[d])}</td>`;
+        }
+        html += `<td class="col-stat">${st.early}</td><td class="col-stat">${st.late}</td>` +
+                `<td class="col-stat">${st.o}</td><td class="col-stat">${st.al}</td>`;
+        html += "</tr>";
+      }
+
+      // daily summary row
+      html += `<tr><td class="col-name summary">每日人數</td><td class="summary">—</td>`;
+      for (let d = 0; d < n; d++) {
+        let a1 = 0, a2 = 0, p1 = 0, leave = 0;
+        for (const s of state.staff) {
+          const v = state.cells[s.id].days[d].v;
+          if (v === "A1") a1++; else if (v === "A2") a2++;
+          else if (v === "P1") p1++; else if (v === "O" || v === "AL") leave++;
+        }
+        const bad = (a1 < 4 || a1 > 5 || p1 < 4 || p1 > 5 || p1 > a1 || a2 > 2 || leave > 3 || (a1 === 4 && a2 < 1));
+        html += `<td class="summary${bad ? " bad" : ""}" title="A1 ${a1} · A2 ${a2} · P1 ${p1} · 假 ${leave}">` +
+                `${a1}+${a2}/${p1}</td>`;
+      }
+      html += `<td class="summary" colspan="4">早+A2／晚</td></tr>`;
+      html += "</tbody>";
+      t.innerHTML = html;
+      renderReport();
+    }
+
+    function cellBtn(sid, d, cell) {
+      const cls = ["cell", cell.v ? "v-" + cell.v : "", cell.locked ? "locked" : "", cell.auto ? "auto" : ""].join(" ").trim();
+      const label = d === -1 ? "上月最後一日" : `${d + 1} 日`;
+      return `<button type="button" class="${cls}" data-cell="${sid}:${d}" aria-label="${label} ${cell.v || "未排"}">` +
+             `<span>${cell.v || ""}</span></button>`;
+    }
+
+    function renderReport() {
+      const n = daysInMonth(state.year, state.month);
+      const { hard, emptyCount } = validate(currentGetVal, state.staff, n);
+      const el = $("#report");
+      let html = "";
+      if (emptyCount > 0) html += `<p>尚有 <b>${emptyCount}</b> 格未排班。填好員工的 O／AL 後，按右上角「自動編更」即可一次排滿。</p>`;
+      if (hard.length === 0 && emptyCount === 0) {
+        html += `<p class="ok-msg">✓ 全部硬性規則通過：每日人手、P1 不多於 A1、PCW 沒有 P1 後接 A1、每人 5 天例假都符合。</p>`;
+      } else if (hard.length > 0) {
+        html += `<p>發現 <b>${hard.length}</b> 項未符合硬性規則：</p><ul class="viol">` +
+                hard.slice(0, 40).map(h => `<li>${esc(h)}</li>`).join("") + "</ul>";
+        if (hard.length > 40) html += `<p>（只顯示首 40 項，共 ${hard.length} 項）</p>`;
+      }
+      // soft summary: balance + long streaks
+      const notes = [];
+      for (const s of state.staff) {
+        const st = staffStats(s.id);
+        if (Math.abs(st.early - st.late) >= 4) notes.push(`${s.name} 早／晚班相差 ${Math.abs(st.early - st.late)} 天（早 ${st.early} · 晚 ${st.late}）`);
+        let streak = state.cells[s.id].prev.v && isWork(state.cells[s.id].prev.v) ? 1 : 0, maxStreak = streak;
+        for (const c of state.cells[s.id].days) {
+          streak = isWork(c.v) ? streak + 1 : 0;
+          if (streak > maxStreak) maxStreak = streak;
+        }
+        if (maxStreak >= 10) notes.push(`${s.name} 最長連續工作 ${maxStreak} 天`);
+      }
+      if (notes.length) html += `<p style="margin-top:10px;">參考（盡量安排）：</p><ul>` + notes.map(x => `<li>${esc(x)}</li>`).join("") + "</ul>";
+      el.innerHTML = html;
+    }
+
+    /* ================= auto-scheduler =================
+       Fixed cells: anything pre-filled (employee O/AL) or locked (特別要求).
+       Cells previously filled by the solver (auto) are cleared and re-solved. */
+    function solve() {
+      const n = daysInMonth(state.year, state.month);
+      const staffList = state.staff;
+      const S = staffList.length;
+      // working copy: val[sid][d], d=-1 stored separately as prevVal[sid]
+      const fixed = {}, val = {}, prevVal = {};
+      for (const s of staffList) {
+        const c = state.cells[s.id];
+        prevVal[s.id] = c.prev.v;
+        fixed[s.id] = c.days.map(cell => cell.v !== "" && !cell.auto);
+        val[s.id] = c.days.map((cell, d) => fixed[s.id][d] ? cell.v : "");
+      }
+      const getV = (sid, d) => d === -1 ? prevVal[sid] : val[sid][d];
+
+      const validCombos = pool => {
+        const res = [];
+        for (let a1 = 4; a1 <= 5; a1++) for (let p1 = 4; p1 <= 5; p1++) {
+          if (p1 > a1) continue;
+          const a2 = pool - a1 - p1;
+          if (a2 < 0 || a2 > 2) continue;
+          if (a1 === 4 && a2 < 1) continue;
+          res.push([a1, p1, a2]);
+        }
+        return res;
+      };
+
+      function attempt() {
+        // deep copy base
+        const g = {}; for (const s of staffList) g[s.id] = val[s.id].slice();
+        const gv = (sid, d) => d === -1 ? prevVal[sid] : g[sid][d];
+        // leave count per day (from fixed)
+        const leaveCnt = new Array(n).fill(0);
+        for (let d = 0; d < n; d++) for (const s of staffList) {
+          const v = g[s.id][d]; if (v === "O" || v === "AL") leaveCnt[d]++;
+        }
+        // --- phase 1: top up O to 5 per person ---
+        const order = staffList.slice();
+        for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+        for (const s of order) {
+          let have = 0; for (let d = 0; d < n; d++) if (g[s.id][d] === "O") have++;
+          let need = 5 - have;
+          if (need <= 0) continue;
+          const cand = [];
+          for (let d = 0; d < n; d++) {
+            if (g[s.id][d] !== "") continue;
+            if (leaveCnt[d] >= 3) continue;
+            if (S - (leaveCnt[d] + 1) < 8) continue;
+            // spread: distance to nearest existing O/AL of this person
+            let nearest = 99;
+            for (let e = 0; e < n; e++) if (g[s.id][e] === "O" || g[s.id][e] === "AL") nearest = Math.min(nearest, Math.abs(e - d));
+            cand.push({ d, score: Math.min(nearest, 10) + Math.random() * 2 - leaveCnt[d] * 0.7 });
+          }
+          cand.sort((a, b) => b.score - a.score);
+          for (const c of cand) {
+            if (need <= 0) break;
+            if (leaveCnt[c.d] >= 3) continue;
+            g[s.id][c.d] = "O"; leaveCnt[c.d]++; need--;
+          }
+        }
+        // --- phase 2: assign shifts day by day ---
+        const early = {}, late = {}, streak = {};
+        for (const s of staffList) { early[s.id] = 0; late[s.id] = 0; streak[s.id] = isWork(prevVal[s.id]) ? 1 : 0; }
+        for (let d = 0; d < n; d++) {
+          // fixed shift counts today
+          const fixedCnt = { A1: 0, A2: 0, P1: 0 };
+          const pool = [];
+          for (const s of staffList) {
+            const v = g[s.id][d];
+            if (v === "") pool.push(s);
+            else if (fixedCnt[v] !== undefined) fixedCnt[v]++;
+          }
+          const poolTotal = pool.length + fixedCnt.A1 + fixedCnt.A2 + fixedCnt.P1;
+          let combos = validCombos(poolTotal).filter(([a1, p1, a2]) =>
+            a1 >= fixedCnt.A1 && p1 >= fixedCnt.P1 && a2 >= fixedCnt.A2);
+          if (!combos.length) combos = validCombos(poolTotal);
+          if (!combos.length) { // pool too small/large: fall back, validation will report
+            for (const s of pool) { g[s.id][d] = "A1"; early[s.id]++; }
+            for (const s of staffList) streak[s.id] = isWork(gv(s.id, d)) ? streak[s.id] + 1 : 0;
+            continue;
+          }
+          // choose combo: prefer matching the pool's collective balance need
+          let behindP = 0; for (const s of pool) behindP += early[s.id] - late[s.id];
+          combos.sort((x, y) => {
+            const sx = -Math.abs((x[1] - x[0]) * 2 - behindP / Math.max(pool.length, 1)) + Math.random() * 1.5;
+            const sy = -Math.abs((y[1] - y[0]) * 2 - behindP / Math.max(pool.length, 1)) + Math.random() * 1.5;
+            return sy - sx;
+          });
+          const [tA1, tP1, tA2] = combos[0];
+          const needCnt = { A1: tA1 - fixedCnt.A1, P1: tP1 - fixedCnt.P1, A2: tA2 - fixedCnt.A2 };
+          const remaining = pool.slice();
+          const scoreFor = (s, shift) => {
+            const prev = gv(s.id, d - 1);
+            if (s.type === "PCW" && prev === "P1" && shift === "A1") return -Infinity;
+            let sc = Math.random() * 0.6;
+            sc += shift === "P1" ? (early[s.id] - late[s.id]) * 1.3 : (late[s.id] - early[s.id]) * 1.3;
+            if (prev === "O" && shift === "P1") sc += 3;                       // 休假後接晚班
+            if (d + 1 < n && g[s.id][d + 1] === "O" && shift === "A1") sc += 3; // 休假前排早班
+            if (prev === "P1" && s.type === "PCW" && shift === "A2") sc += 2.5; // A2 轉接
+            if (streak[s.id] >= 9) sc -= 9; else if (streak[s.id] >= 7) sc -= 2;
+            if (shift === "A2") sc -= 0.3;
+            return sc;
+          };
+          for (const shift of ["A1", "P1", "A2"]) {
+            let k = needCnt[shift];
+            while (k > 0 && remaining.length) {
+              let bi = -1, bs = -Infinity;
+              for (let i = 0; i < remaining.length; i++) {
+                const sc = scoreFor(remaining[i], shift);
+                if (sc > bs) { bs = sc; bi = i; }
+              }
+              if (bi < 0 || bs === -Infinity) break;
+              const s = remaining.splice(bi, 1)[0];
+              g[s.id][d] = shift;
+              if (shift === "P1") late[s.id]++; else early[s.id]++;
+              k--;
+            }
+          }
+          // anyone left unassigned (combo shortfall): give A2/A1 best-effort
+          for (const s of remaining) {
+            const candS = ["A2", "A1", "P1"].filter(sh => !(s.type === "PCW" && gv(s.id, d - 1) === "P1" && sh === "A1"));
+            const sh = candS[0] || "P1";
+            g[s.id][d] = sh; if (sh === "P1") late[s.id]++; else early[s.id]++;
+          }
+          for (const s of staffList) streak[s.id] = isWork(gv(s.id, d)) ? streak[s.id] + 1 : 0;
+        }
+        return g;
+      }
+
+      function evaluate(g) {
+        const gv = (sid, d) => d === -1 ? prevVal[sid] : g[sid][d];
+        const { hard, emptyCount } = validate(gv, staffList, n);
+        let soft = hard.length * 100 + emptyCount * 100;
+        for (const s of staffList) {
+          let e = 0, l = 0, st = isWork(prevVal[s.id]) ? 1 : 0, mx = st;
+          for (let d = 0; d < n; d++) {
+            const v = g[s.id][d];
+            if (isEarly(v)) e++; else if (v === "P1") l++;
+            st = isWork(v) ? st + 1 : 0; if (st > mx) mx = st;
+          }
+          soft += Math.abs(e - l) * 2;
+          if (mx >= 10) soft += (mx - 9) * 6;
+        }
+        return soft;
+      }
+
+      let best = null, bestScore = Infinity;
+      for (let i = 0; i < 500; i++) {
+        const g = attempt();
+        const sc = evaluate(g);
+        if (sc < bestScore) { bestScore = sc; best = g; }
+        if (bestScore <= 0) break;
+      }
+      // write back
+      for (const s of staffList) {
+        const c = state.cells[s.id];
+        for (let d = 0; d < n; d++) {
+          if (fixed[s.id][d]) { c.days[d].auto = false; }
+          else { c.days[d].v = best[s.id][d]; c.days[d].auto = best[s.id][d] !== ""; }
+        }
+      }
+      const { hard, emptyCount } = validate(currentGetVal, staffList, n);
+      return { hard: hard.length, emptyCount };
+    }
+
+    /* ================= interactions ================= */
+    function initControls() {
+      const ySel = $("#selYear"), mSel = $("#selMonth");
+      ySel.innerHTML = [2025, 2026, 2027].map(y => `<option value="${y}">${y} 年</option>`).join("");
+      mSel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} 月</option>`).join("");
+      ySel.addEventListener("change", () => { state.year = +ySel.value; render(); });
+      mSel.addEventListener("change", () => { state.month = +mSel.value; render(); });
+
+      document.querySelectorAll(".brush[data-brush]").forEach(b => {
+        b.addEventListener("click", () => {
+          state.brush = b.dataset.brush;
+          document.querySelectorAll(".brush[data-brush]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+        });
+      });
+      $("#btnLockMode").addEventListener("click", e => {
+        state.lockMode = !state.lockMode;
+        e.currentTarget.setAttribute("aria-pressed", state.lockMode ? "true" : "false");
+        toast(state.lockMode ? "底線模式：點格仔可標記／取消特別要求" : "底線模式已關閉");
+      });
+
+      $("#rosterTable").addEventListener("click", e => {
+        const del = e.target.closest("[data-del]");
+        if (del) {
+          const sid = +del.dataset.del;
+          state.staff = state.staff.filter(s => s.id !== sid);
+          delete state.cells[sid];
+          render(); return;
+        }
+        const btn = e.target.closest("[data-cell]");
+        if (!btn) return;
+        const [sidStr, dStr] = btn.dataset.cell.split(":");
+        const sid = +sidStr, d = +dStr;
+        const cell = d === -1 ? state.cells[sid].prev : state.cells[sid].days[d];
+        if (state.lockMode) { cell.locked = !cell.locked; render(); return; }
+        cell.v = state.brush; cell.auto = false;
+        if (state.brush === "") cell.locked = false;
+        render();
+      });
+      $("#rosterTable").addEventListener("change", e => {
+        const nameIn = e.target.closest("[data-name]");
+        if (nameIn) {
+          const s = state.staff.find(x => x.id === +nameIn.dataset.name);
+          if (s && nameIn.value.trim()) { s.name = nameIn.value.trim(); renderReport(); }
+          return;
+        }
+        const typeSel = e.target.closest("[data-type]");
+        if (typeSel) {
+          const s = state.staff.find(x => x.id === +typeSel.dataset.type);
+          if (s) { s.type = typeSel.value; render(); }
+        }
+      });
+
+      $("#btnAddStaff").addEventListener("click", () => {
+        const s = mkStaff("新員工", "PCW");
+        state.staff.push(s); render();
+        toast("已新增員工，可在表格第一欄改名及類別");
+      });
+      $("#btnAuto").addEventListener("click", () => {
+        const r = solve(); render();
+        if (r.hard === 0) toast("編更完成：全部硬性規則通過 ✓");
+        else toast(`編更完成，但仍有 ${r.hard} 項硬性規則未符合，請看下方「規則檢查」`);
+      });
+      $("#btnClearAuto").addEventListener("click", () => {
+        for (const s of state.staff) for (const c of state.cells[s.id].days) {
+          if (c.auto) { c.v = ""; c.auto = false; }
+        }
+        render(); toast("已清除自動編更的格仔（員工填寫及特別要求保留）");
+      });
+      $("#btnClearAll").addEventListener("click", () => {
+        for (const s of state.staff) {
+          const c = state.cells[s.id];
+          c.prev = blankCell();
+          c.days = c.days.map(blankCell);
+        }
+        render(); toast("已清空整張班表（員工名單保留）");
+      });
+      $("#btnExport").addEventListener("click", exportExcel);
+    }
+
+    /* ================= Excel export ================= */
+    function colLetter(num) { // 1-based
+      let s = ""; while (num > 0) { const r = (num - 1) % 26; s = String.fromCharCode(65 + r) + s; num = Math.floor((num - 1) / 26); } return s;
+    }
+
+    async function exportExcel() {
+      if (typeof ExcelJS === "undefined") { toast("Excel 元件未能載入，請檢查網絡連線後再試一次"); return; }
+      const { year, month } = state;
+      const n = daysInMonth(year, month);
+      const prevDate = new Date(year, month - 1, 0);
+      const firstDayCol = 4;                       // D
+      const lastDayCol = firstDayCol + n - 1;
+      const statCol = lastDayCol + 1;              // early, late, O, AL follow
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet(`${year}年${month}月班表`);
+      const RED = "FFC00000", thin = { style: "thin", color: { argb: "FFBFBFBF" } };
+      const border = { top: thin, left: thin, bottom: thin, right: thin };
+
+      // title
+      ws.mergeCells(1, 1, 1, statCol + 3);
+      const title = ws.getCell(1, 1);
+      title.value = `PCW / LPCW ${year} 年 ${month} 月值班表`;
+      title.font = { name: "Microsoft JhengHei", size: 14, bold: true };
+      title.alignment = { horizontal: "left", vertical: "middle" };
+      ws.getRow(1).height = 26;
+
+      // headers (row 2) + weekday (row 3)
+      const headers = ["員工", "類別", `上月尾 ${prevDate.getDate()}/${prevDate.getMonth() + 1}`];
+      for (let d = 1; d <= n; d++) headers.push(d);
+      headers.push("月度早班合計 (A1+A2)", "月度晚班合計 (P1)", "例假 (O)", "年假 (AL)");
+      headers.forEach((h, i) => {
+        const c = ws.getCell(2, i + 1);
+        c.value = h; c.font = { name: "Microsoft JhengHei", size: 10, bold: true };
+        c.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        c.border = border; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDDEBF7" } };
+      });
+      ws.getCell(3, 1).value = ""; ws.getCell(3, 2).value = ""; ws.getCell(3, 3).value = DOW[prevDate.getDay()];
+      for (let d = 1; d <= n; d++) {
+        const c = ws.getCell(3, firstDayCol + d - 1);
+        c.value = DOW[new Date(year, month - 1, d).getDay()];
+        c.font = { name: "Microsoft JhengHei", size: 9, color: { argb: "FF595959" } };
+        c.alignment = { horizontal: "center" }; c.border = border;
+      }
+      for (let col = 1; col <= statCol + 3; col++) { ws.getCell(3, col).border = border; }
+      ws.getRow(2).height = 30;
+
+      // widths
+      ws.getColumn(1).width = 14; ws.getColumn(2).width = 9; ws.getColumn(3).width = 10;
+      for (let d = 0; d < n; d++) ws.getColumn(firstDayCol + d).width = 4.5;
+      for (let k = 0; k < 4; k++) ws.getColumn(statCol + k).width = 11;
+
+      // data rows from row 4
+      state.staff.forEach((s, idx) => {
+        const r = 4 + idx;
+        const cells = state.cells[s.id];
+        const put = (col, v, locked) => {
+          const c = ws.getCell(r, col);
+          c.value = v || null;
+          c.alignment = { horizontal: "center", vertical: "middle" };
+          c.border = border;
+          const font = { name: "Microsoft JhengHei", size: 11 };
+          if (v === "O" || v === "AL") font.color = { argb: RED };
+          if (locked) font.underline = "single";
+          c.font = font;
+          return c;
+        };
+        const nameC = ws.getCell(r, 1); nameC.value = s.name;
+        nameC.font = { name: "Microsoft JhengHei", size: 11, bold: true }; nameC.border = border;
+        const typeC = ws.getCell(r, 2); typeC.value = s.type;
+        typeC.alignment = { horizontal: "center" }; typeC.border = border;
+        typeC.font = { name: "Microsoft JhengHei", size: 11 };
+        put(3, cells.prev.v, cells.prev.locked);
+        for (let d = 0; d < n; d++) put(firstDayCol + d, cells.days[d].v, cells.days[d].locked);
+        const range = `${colLetter(firstDayCol)}${r}:${colLetter(lastDayCol)}${r}`;
+        const formulas = [
+          `COUNTIF(${range},"A1")+COUNTIF(${range},"A2")`,
+          `COUNTIF(${range},"P1")`,
+          `COUNTIF(${range},"O")`,
+          `COUNTIF(${range},"AL")`
+        ];
+        formulas.forEach((f, k) => {
+          const c = ws.getCell(r, statCol + k);
+          c.value = { formula: f };
+          c.alignment = { horizontal: "center" }; c.border = border;
+          c.font = { name: "Microsoft JhengHei", size: 11, bold: true };
+        });
+      });
+
+      const noteRow = 4 + state.staff.length + 1;
+      ws.mergeCells(noteRow, 1, noteRow, statCol + 3);
+      const note = ws.getCell(noteRow, 1);
+      note.value = "備註：底線為員工特別要求 DUTY；O 及 AL 以紅字標示；右側合計欄為 COUNTIF 動態公式。上月尾一欄為上月最後一日班次（作 P1→A1 及連續工作日計算之用，不計入本月合計）。";
+      note.font = { name: "Microsoft JhengHei", size: 9, color: { argb: "FF595959" } };
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `PCW_LPCW_${year}年${month}月班表.xlsx`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast("Excel 已匯出：含 COUNTIF 合計公式、紅字 O/AL 及底線特別要求");
+    }
+
+    initControls();
+    render();
+    </script>
+  </body>
+</html>
