@@ -22,7 +22,7 @@
         --line-strong: #aebac2;
         --accent: #0e6b5c;
         --accent-ink: #ffffff;
-        --a1: #b45309; --a1-bg: #fdf0dc;
+        --a1: #15803d; --a1-bg: #dcf2e3;
         --a2: #a16207; --a2-bg: #fdf6d8;
         --p1: #1d4ed8; --p1-bg: #dfe9fd;
         --off: #c22424; --off-bg: #fdeaea;
@@ -44,7 +44,7 @@
           --line-strong: #43566a;
           --accent: #2ea88f;
           --accent-ink: #06231c;
-          --a1: #f2b25c; --a1-bg: #3d2c12;
+          --a1: #4ade80; --a1-bg: #143a20;
           --a2: #ecd27a; --a2-bg: #3a3414;
           --p1: #8db1f7; --p1-bg: #1d2f52;
           --off: #f28b8b; --off-bg: #422222;
@@ -239,7 +239,7 @@
         <button class="brush b-al" data-brush="AL" aria-pressed="false" type="button">AL<small>年假</small></button>
         <button class="brush" data-brush="" aria-pressed="false" type="button">清除<small>空格</small></button>
         <button class="brush lockmode" id="btnLockMode" aria-pressed="false" type="button">底線<small>特別要求</small></button>
-        <span class="hint">先用填格筆點格仔填班／填假；開「底線」模式再點格仔，可標記或取消特別要求（底線格仔在自動編更時會鎖定不改）。第一欄灰色格是上月最後一日班次，編更時會一併考慮。</span>
+        <span class="hint">先用填格筆點格仔填班／填假；開「底線」模式後再點格仔，會填入所選班別並同時加底線，不用再點多次（底線格仔在自動編更時會鎖定不改）。第一欄灰色格是上月最後一日班次，編更時會一併考慮。</span>
       </div>
 
       <!-- roster grid -->
@@ -699,7 +699,7 @@
       $("#btnLockMode").addEventListener("click", e => {
         state.lockMode = !state.lockMode;
         e.currentTarget.setAttribute("aria-pressed", state.lockMode ? "true" : "false");
-        toast(state.lockMode ? "底線模式：點格仔可標記／取消特別要求" : "底線模式已關閉");
+        toast(state.lockMode ? "底線模式已開：點格仔會填入所選班別並加底線" : "底線模式已關閉");
       });
 
       $("#rosterTable").addEventListener("click", e => {
@@ -715,7 +715,12 @@
         const [sidStr, dStr] = btn.dataset.cell.split(":");
         const sid = +sidStr, d = +dStr;
         const cell = d === -1 ? state.cells[sid].prev : state.cells[sid].days[d];
-        if (state.lockMode) { cell.locked = !cell.locked; render(); return; }
+        if (state.lockMode) {
+          if (cell.v === state.brush && state.brush !== "") { cell.locked = !cell.locked; }
+          else if (state.brush === "") { cell.v = ""; cell.locked = false; }
+          else { cell.v = state.brush; cell.auto = false; cell.locked = true; }
+          render(); return;
+        }
         cell.v = state.brush; cell.auto = false;
         if (state.brush === "") cell.locked = false;
         render();
@@ -823,6 +828,7 @@
           c.border = border;
           const font = { name: "Microsoft JhengHei", size: 11 };
           if (v === "O" || v === "AL") font.color = { argb: RED };
+          else if (v === "A1") font.color = { argb: "FF15803D" };
           if (locked) font.underline = "single";
           c.font = font;
           return c;
