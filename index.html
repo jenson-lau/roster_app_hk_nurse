@@ -22,7 +22,7 @@
         --line-strong: #aebac2;
         --accent: #0e6b5c;
         --accent-ink: #ffffff;
-        --a1: #15803d; --a1-bg: #dcf2e3;
+        --a1: #16a34a; --a1-bg: #bbf7d0;
         --a2: #a16207; --a2-bg: #fdf6d8;
         --p1: #1d4ed8; --p1-bg: #dfe9fd;
         --off: #c22424; --off-bg: #fdeaea;
@@ -44,7 +44,7 @@
           --line-strong: #43566a;
           --accent: #2ea88f;
           --accent-ink: #06231c;
-          --a1: #4ade80; --a1-bg: #143a20;
+          --a1: #4ade80; --a1-bg: #14532d;
           --a2: #ecd27a; --a2-bg: #3a3414;
           --p1: #8db1f7; --p1-bg: #1d2f52;
           --off: #f28b8b; --off-bg: #422222;
@@ -195,6 +195,20 @@
       .rules li { margin-bottom: 3px; }
       .rules b { color: var(--ink); }
 
+      /* ---------- rules settings ---------- */
+      .rules-panel { margin-top: 12px; }
+      .rules-panel h2 { font-size: 15px; margin: 0 0 8px; font-family: "Noto Serif TC", serif; }
+      .rules-panel h2 span { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; }
+      .rules-grid { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; }
+      .rules-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+      .rules-grid input[type="number"] {
+        width: 66px; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 7px;
+        background: var(--surface); font-weight: 700; font-size: 15px; text-align: center; color: var(--ink);
+      }
+      .rules-grid label.chk { flex-direction: row; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 500; color: var(--ink); padding-bottom: 7px; }
+      .rules-grid input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
+      .rules-note { font-size: 12.5px; color: var(--ink-soft); }
+
       .toast {
         position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
         background: var(--ink); color: var(--bg); padding: 11px 20px; border-radius: 9px;
@@ -239,8 +253,29 @@
         <button class="brush b-al" data-brush="AL" aria-pressed="false" type="button">AL<small>年假</small></button>
         <button class="brush" data-brush="" aria-pressed="false" type="button">清除<small>空格</small></button>
         <button class="brush lockmode" id="btnLockMode" aria-pressed="false" type="button">底線<small>特別要求</small></button>
-        <span class="hint">先用填格筆點格仔填班／填假；開「底線」模式後再點格仔，會填入所選班別並同時加底線，不用再點多次（底線格仔在自動編更時會鎖定不改）。第一欄灰色格是上月最後一日班次，編更時會一併考慮。</span>
+        <span class="hint">先用填格筆點格仔填班／填假；開「底線」模式後，點已有班／假的格仔只加底線、不會改班，再點一次取消底線；點空格才會填入所選班別並加底線。底線模式開著期間逐格點都有效，不用逐格重開（底線格仔在自動編更時會鎖定不改）。第一欄灰色格是上月最後一日班次，編更時會一併考慮。</span>
       </div>
+
+      <!-- rules settings -->
+      <section class="panel rules-panel" aria-label="規則設定">
+        <h2>規則設定 <span style="font-weight: 500; font-size: 12.5px; color: var(--ink-soft);">（可自行更改；改完即時生效，自動編更和規則檢查都會跟新規則）</span></h2>
+        <div class="rules-grid" id="rulesGrid">
+          <label>每日 A1 最少人<input type="number" id="ruleA1Min" min="0" max="20" step="1" aria-label="每日 A1 最少人數"></label>
+          <label>每日 A1 最多人<input type="number" id="ruleA1Max" min="0" max="20" step="1" aria-label="每日 A1 最多人數"></label>
+          <label>每日 P1 最少人<input type="number" id="ruleP1Min" min="0" max="20" step="1" aria-label="每日 P1 最少人數"></label>
+          <label>每日 P1 最多人<input type="number" id="ruleP1Max" min="0" max="20" step="1" aria-label="每日 P1 最多人數"></label>
+          <label>每日 A2 最多人<input type="number" id="ruleA2Max" min="0" max="20" step="1" aria-label="每日 A2 最多人數"></label>
+          <label>每日放假最多人（O＋AL）<input type="number" id="ruleMaxLeave" min="0" max="20" step="1" aria-label="每日放假最多人數"></label>
+          <label>每人每月例假 O 日數<input type="number" id="ruleODays" min="0" max="31" step="1" aria-label="每人每月例假 O 日數"></label>
+          <label class="chk"><input type="checkbox" id="ruleP1NotExceedA1"> P1 不多於 A1</label>
+          <label class="chk"><input type="checkbox" id="ruleRequireA2"> A1 只有最少人數時，必須有 A2 補充</label>
+          <label class="chk"><input type="checkbox" id="ruleNoP1toA1"> PCW 不可 P1 後接 A1</label>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+          <button class="btn" id="btnResetRules" type="button">重設為原本規則</button>
+          <span class="rules-note">規則會儲存在這個瀏覽器，下次打開仍是你改過的數字；換了另一區，改好人數再按「自動編更」即可。</span>
+        </div>
+      </section>
 
       <!-- roster grid -->
       <div class="grid-card">
@@ -266,12 +301,7 @@
             <span><span style="text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; font-weight: 900;">A1</span>特別要求（底線）</span>
           </div>
           <h2 style="margin-top: 16px;">編更規則摘要</h2>
-          <ul class="rules">
-            <li><b>硬性：</b>每日 A1 需 4–5 人、P1 需 4–5 人、P1 不多於 A1、A2 不多於 2 人；若 A1 只有 4 人，必須有 A2 補充。</li>
-            <li><b>硬性：</b>每日放假（O＋AL）不多於 3 人；每人每月 5 天例假 O（不計 AL）。</li>
-            <li><b>硬性：</b>PCW 不可在 P1 後接 A1（LPCW 不受此限），並會考慮上月最後一日的班次。</li>
-            <li><b>盡量：</b>每人早班（A1＋A2）與晚班（P1）數量平均；PCW 在 P1 後可用 A2 轉接；放假前排 A1、放假後排 P1；盡量不連續工作 10 天以上。</li>
-          </ul>
+          <ul class="rules" id="rulesSummary"></ul>
         </section>
       </div>
     </div>
@@ -286,10 +316,39 @@
     let uid = 0;
     function mkStaff(name, type) { return { id: ++uid, name, type }; }
 
+    /* ================= rules (editable by the user) ================= */
+    const DEFAULT_RULES = {
+      a1Min: 4, a1Max: 5, p1Min: 4, p1Max: 5, a2Max: 2,
+      requireA2WhenA1Min: true, p1NotExceedA1: true,
+      maxLeave: 3, oDays: 5, noP1toA1: true
+    };
+    function loadRules() {
+      try {
+        const raw = localStorage.getItem("rosterRulesV1");
+        if (!raw) return { ...DEFAULT_RULES };
+        const parsed = JSON.parse(raw);
+        const r = { ...DEFAULT_RULES };
+        for (const k of ["a1Min", "a1Max", "p1Min", "p1Max", "a2Max", "maxLeave", "oDays"]) {
+          const v = Number(parsed[k]);
+          if (Number.isFinite(v)) r[k] = Math.max(0, Math.min(31, Math.floor(v)));
+        }
+        for (const k of ["requireA2WhenA1Min", "p1NotExceedA1", "noP1toA1"]) {
+          if (typeof parsed[k] === "boolean") r[k] = parsed[k];
+        }
+        if (r.a1Max < r.a1Min) r.a1Max = r.a1Min;
+        if (r.p1Max < r.p1Min) r.p1Max = r.p1Min;
+        return r;
+      } catch (e) { return { ...DEFAULT_RULES }; }
+    }
+    function saveRules() {
+      try { localStorage.setItem("rosterRulesV1", JSON.stringify(state.rules)); } catch (e) {}
+    }
+
     const state = {
       year: 2026, month: 11,           // month: 1-12
       brush: "A1",
       lockMode: false,
+      rules: loadRules(),
       staff: [
         mkStaff("PCW1", "PCW"), mkStaff("PCW2", "PCW"), mkStaff("PCW3", "PCW"),
         mkStaff("PCW4", "PCW"), mkStaff("PCW5", "PCW"), mkStaff("PCW6", "PCW"),
@@ -367,6 +426,7 @@
        getVal(sid, d) with d = -1 meaning prev-month last day. */
     function validate(getVal, staffList, nDays) {
       const hard = [];
+      const r = state.rules;
       // daily rules
       for (let d = 0; d < nDays; d++) {
         let a1 = 0, a2 = 0, p1 = 0, leave = 0;
@@ -377,12 +437,12 @@
           else if (v === "O" || v === "AL") leave++;
         }
         const day = d + 1;
-        if (a1 < 4 || a1 > 5) hard.push(`${day} 日：A1 有 ${a1} 人（需 4–5 人）`);
-        if (p1 < 4 || p1 > 5) hard.push(`${day} 日：P1 有 ${p1} 人（需 4–5 人）`);
-        if (p1 > a1) hard.push(`${day} 日：P1（${p1} 人）多於 A1（${a1} 人）`);
-        if (a2 > 2) hard.push(`${day} 日：A2 有 ${a2} 人（不可多於 2 人）`);
-        if (a1 === 4 && a2 < 1) hard.push(`${day} 日：A1 只有 4 人但沒有 A2 補充`);
-        if (leave > 3) hard.push(`${day} 日：放假有 ${leave} 人（不可多於 3 人）`);
+        if (a1 < r.a1Min || a1 > r.a1Max) hard.push(`${day} 日：A1 有 ${a1} 人（需 ${r.a1Min}–${r.a1Max} 人）`);
+        if (p1 < r.p1Min || p1 > r.p1Max) hard.push(`${day} 日：P1 有 ${p1} 人（需 ${r.p1Min}–${r.p1Max} 人）`);
+        if (r.p1NotExceedA1 && p1 > a1) hard.push(`${day} 日：P1（${p1} 人）多於 A1（${a1} 人）`);
+        if (a2 > r.a2Max) hard.push(`${day} 日：A2 有 ${a2} 人（不可多於 ${r.a2Max} 人）`);
+        if (r.requireA2WhenA1Min && a1 === r.a1Min && a2 < 1) hard.push(`${day} 日：A1 只有 ${r.a1Min} 人但沒有 A2 補充`);
+        if (leave > r.maxLeave) hard.push(`${day} 日：放假有 ${leave} 人（不可多於 ${r.maxLeave} 人）`);
       }
       // per-person rules
       let emptyCount = 0;
@@ -392,14 +452,14 @@
           const v = getVal(s.id, d);
           if (v === "") emptyCount++;
           if (v === "O") oCount++;
-          if (s.type === "PCW") {
+          if (r.noP1toA1 && s.type === "PCW") {
             const prev = getVal(s.id, d - 1);
             if (prev === "P1" && v === "A1") {
               hard.push(`${s.name}：${d === 0 ? "1 日" : (d + 1) + " 日"} A1 緊接上一日 P1（PCW 不可）`);
             }
           }
         }
-        if (oCount !== 5) hard.push(`${s.name}：例假 O 有 ${oCount} 天（需 5 天）`);
+        if (oCount !== r.oDays) hard.push(`${s.name}：例假 O 有 ${oCount} 天（需 ${r.oDays} 天）`);
       }
       return { hard, emptyCount };
     }
@@ -469,14 +529,27 @@
           if (v === "A1") a1++; else if (v === "A2") a2++;
           else if (v === "P1") p1++; else if (v === "O" || v === "AL") leave++;
         }
-        const bad = (a1 < 4 || a1 > 5 || p1 < 4 || p1 > 5 || p1 > a1 || a2 > 2 || leave > 3 || (a1 === 4 && a2 < 1));
+        const r = state.rules;
+        const bad = (a1 < r.a1Min || a1 > r.a1Max || p1 < r.p1Min || p1 > r.p1Max || (r.p1NotExceedA1 && p1 > a1) || a2 > r.a2Max || leave > r.maxLeave || (r.requireA2WhenA1Min && a1 === r.a1Min && a2 < 1));
         html += `<td class="summary${bad ? " bad" : ""}" title="A1 ${a1} · A2 ${a2} · P1 ${p1} · 假 ${leave}">` +
                 `${a1}+${a2}/${p1}</td>`;
       }
       html += `<td class="summary" colspan="4">早+A2／晚</td></tr>`;
       html += "</tbody>";
       t.innerHTML = html;
+      renderRulesSummary();
       renderReport();
+    }
+
+    function renderRulesSummary() {
+      const r = state.rules;
+      const el = $("#rulesSummary");
+      if (!el) return;
+      el.innerHTML =
+        `<li><b>硬性：</b>每日 A1 需 ${r.a1Min}–${r.a1Max} 人、P1 需 ${r.p1Min}–${r.p1Max} 人${r.p1NotExceedA1 ? "、P1 不多於 A1" : ""}、A2 不多於 ${r.a2Max} 人${r.requireA2WhenA1Min ? `；若 A1 只有 ${r.a1Min} 人，必須有 A2 補充` : ""}。</li>` +
+        `<li><b>硬性：</b>每日放假（O＋AL）不多於 ${r.maxLeave} 人；每人每月 ${r.oDays} 天例假 O（不計 AL）。</li>` +
+        (r.noP1toA1 ? `<li><b>硬性：</b>PCW 不可在 P1 後接 A1（LPCW 不受此限），並會考慮上月最後一日的班次。</li>` : "") +
+        `<li><b>盡量：</b>每人早班（A1＋A2）與晚班（P1）數量平均；PCW 在 P1 後可用 A2 轉接；放假前排 A1、放假後排 P1；盡量不連續工作 10 天以上。</li>`;
     }
 
     function cellBtn(sid, d, cell) {
@@ -493,7 +566,8 @@
       let html = "";
       if (emptyCount > 0) html += `<p>尚有 <b>${emptyCount}</b> 格未排班。填好員工的 O／AL 後，按右上角「自動編更」即可一次排滿。</p>`;
       if (hard.length === 0 && emptyCount === 0) {
-        html += `<p class="ok-msg">✓ 全部硬性規則通過：每日人手、P1 不多於 A1、PCW 沒有 P1 後接 A1、每人 5 天例假都符合。</p>`;
+        const r = state.rules;
+        html += `<p class="ok-msg">✓ 全部硬性規則通過：每日人手${r.p1NotExceedA1 ? "、P1 不多於 A1" : ""}${r.noP1toA1 ? "、PCW 沒有 P1 後接 A1" : ""}、每人 ${r.oDays} 天例假都符合。</p>`;
       } else if (hard.length > 0) {
         html += `<p>發現 <b>${hard.length}</b> 項未符合硬性規則：</p><ul class="viol">` +
                 hard.slice(0, 40).map(h => `<li>${esc(h)}</li>`).join("") + "</ul>";
@@ -534,11 +608,12 @@
 
       const validCombos = pool => {
         const res = [];
-        for (let a1 = 4; a1 <= 5; a1++) for (let p1 = 4; p1 <= 5; p1++) {
-          if (p1 > a1) continue;
+        const r = state.rules;
+        for (let a1 = r.a1Min; a1 <= r.a1Max; a1++) for (let p1 = r.p1Min; p1 <= r.p1Max; p1++) {
+          if (r.p1NotExceedA1 && p1 > a1) continue;
           const a2 = pool - a1 - p1;
-          if (a2 < 0 || a2 > 2) continue;
-          if (a1 === 4 && a2 < 1) continue;
+          if (a2 < 0 || a2 > r.a2Max) continue;
+          if (r.requireA2WhenA1Min && a1 === r.a1Min && a2 < 1) continue;
           res.push([a1, p1, a2]);
         }
         return res;
@@ -553,18 +628,18 @@
         for (let d = 0; d < n; d++) for (const s of staffList) {
           const v = g[s.id][d]; if (v === "O" || v === "AL") leaveCnt[d]++;
         }
-        // --- phase 1: top up O to 5 per person ---
+        // --- phase 1: top up O to the configured number per person ---
         const order = staffList.slice();
         for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
         for (const s of order) {
           let have = 0; for (let d = 0; d < n; d++) if (g[s.id][d] === "O") have++;
-          let need = 5 - have;
+          let need = state.rules.oDays - have;
           if (need <= 0) continue;
           const cand = [];
           for (let d = 0; d < n; d++) {
             if (g[s.id][d] !== "") continue;
-            if (leaveCnt[d] >= 3) continue;
-            if (S - (leaveCnt[d] + 1) < 8) continue;
+            if (leaveCnt[d] >= state.rules.maxLeave) continue;
+            if (S - (leaveCnt[d] + 1) < state.rules.a1Min + state.rules.p1Min) continue;
             // spread: distance to nearest existing O/AL of this person
             let nearest = 99;
             for (let e = 0; e < n; e++) if (g[s.id][e] === "O" || g[s.id][e] === "AL") nearest = Math.min(nearest, Math.abs(e - d));
@@ -573,7 +648,7 @@
           cand.sort((a, b) => b.score - a.score);
           for (const c of cand) {
             if (need <= 0) break;
-            if (leaveCnt[c.d] >= 3) continue;
+            if (leaveCnt[c.d] >= state.rules.maxLeave) continue;
             g[s.id][c.d] = "O"; leaveCnt[c.d]++; need--;
           }
         }
@@ -610,7 +685,7 @@
           const remaining = pool.slice();
           const scoreFor = (s, shift) => {
             const prev = gv(s.id, d - 1);
-            if (s.type === "PCW" && prev === "P1" && shift === "A1") return -Infinity;
+            if (state.rules.noP1toA1 && s.type === "PCW" && prev === "P1" && shift === "A1") return -Infinity;
             let sc = Math.random() * 0.6;
             sc += shift === "P1" ? (early[s.id] - late[s.id]) * 1.3 : (late[s.id] - early[s.id]) * 1.3;
             if (prev === "O" && shift === "P1") sc += 3;                       // 休假後接晚班
@@ -637,7 +712,7 @@
           }
           // anyone left unassigned (combo shortfall): give A2/A1 best-effort
           for (const s of remaining) {
-            const candS = ["A2", "A1", "P1"].filter(sh => !(s.type === "PCW" && gv(s.id, d - 1) === "P1" && sh === "A1"));
+            const candS = ["A2", "A1", "P1"].filter(sh => !(state.rules.noP1toA1 && s.type === "PCW" && gv(s.id, d - 1) === "P1" && sh === "A1"));
             const sh = candS[0] || "P1";
             g[s.id][d] = sh; if (sh === "P1") late[s.id]++; else early[s.id]++;
           }
@@ -683,12 +758,59 @@
     }
 
     /* ================= interactions ================= */
+    function syncRulesUI() {
+      const r = state.rules;
+      const setNum = (id, v) => { const el = $(id); if (el) el.value = String(v); };
+      setNum("#ruleA1Min", r.a1Min); setNum("#ruleA1Max", r.a1Max);
+      setNum("#ruleP1Min", r.p1Min); setNum("#ruleP1Max", r.p1Max);
+      setNum("#ruleA2Max", r.a2Max); setNum("#ruleMaxLeave", r.maxLeave); setNum("#ruleODays", r.oDays);
+      const setChk = (id, v) => { const el = $(id); if (el) el.checked = !!v; };
+      setChk("#ruleP1NotExceedA1", r.p1NotExceedA1);
+      setChk("#ruleRequireA2", r.requireA2WhenA1Min);
+      setChk("#ruleNoP1toA1", r.noP1toA1);
+    }
+    function readRulesUI() {
+      const num = (id, fallback, min, max) => {
+        const el = $(id); if (!el) return fallback;
+        let v = Math.floor(Number(el.value));
+        if (!Number.isFinite(v)) v = fallback;
+        return Math.max(min, Math.min(max, v));
+      };
+      const r = state.rules;
+      r.a1Min = num("#ruleA1Min", r.a1Min, 0, 20);
+      r.a1Max = num("#ruleA1Max", r.a1Max, 0, 20);
+      r.p1Min = num("#ruleP1Min", r.p1Min, 0, 20);
+      r.p1Max = num("#ruleP1Max", r.p1Max, 0, 20);
+      r.a2Max = num("#ruleA2Max", r.a2Max, 0, 20);
+      r.maxLeave = num("#ruleMaxLeave", r.maxLeave, 0, 20);
+      r.oDays = num("#ruleODays", r.oDays, 0, 31);
+      if (r.a1Max < r.a1Min) r.a1Max = r.a1Min;
+      if (r.p1Max < r.p1Min) r.p1Max = r.p1Min;
+      const chk = id => { const el = $(id); return el ? el.checked : false; };
+      r.p1NotExceedA1 = chk("#ruleP1NotExceedA1");
+      r.requireA2WhenA1Min = chk("#ruleRequireA2");
+      r.noP1toA1 = chk("#ruleNoP1toA1");
+      saveRules();
+      syncRulesUI();
+      render();
+    }
+
     function initControls() {
       const ySel = $("#selYear"), mSel = $("#selMonth");
       ySel.innerHTML = [2025, 2026, 2027].map(y => `<option value="${y}">${y} 年</option>`).join("");
       mSel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} 月</option>`).join("");
       ySel.addEventListener("change", () => { state.year = +ySel.value; render(); });
       mSel.addEventListener("change", () => { state.month = +mSel.value; render(); });
+
+      syncRulesUI();
+      document.querySelectorAll("#rulesGrid input").forEach(el => {
+        el.addEventListener("change", readRulesUI);
+      });
+      $("#btnResetRules").addEventListener("click", () => {
+        state.rules = { ...DEFAULT_RULES };
+        saveRules(); syncRulesUI(); render();
+        toast("已重設為原本規則");
+      });
 
       document.querySelectorAll(".brush[data-brush]").forEach(b => {
         b.addEventListener("click", () => {
@@ -699,7 +821,7 @@
       $("#btnLockMode").addEventListener("click", e => {
         state.lockMode = !state.lockMode;
         e.currentTarget.setAttribute("aria-pressed", state.lockMode ? "true" : "false");
-        toast(state.lockMode ? "底線模式已開：點格仔會填入所選班別並加底線" : "底線模式已關閉");
+        toast(state.lockMode ? "底線模式已開：點已有班／假只加底線，點空格會填班並加底線" : "底線模式已關閉");
       });
 
       $("#rosterTable").addEventListener("click", e => {
@@ -716,9 +838,13 @@
         const sid = +sidStr, d = +dStr;
         const cell = d === -1 ? state.cells[sid].prev : state.cells[sid].days[d];
         if (state.lockMode) {
-          if (cell.v === state.brush && state.brush !== "") { cell.locked = !cell.locked; }
-          else if (state.brush === "") { cell.v = ""; cell.locked = false; }
-          else { cell.v = state.brush; cell.auto = false; cell.locked = true; }
+          if (cell.v === "") {
+            // 空格：填入所選班別並加底線；未選班別時不做任何事
+            if (state.brush !== "") { cell.v = state.brush; cell.auto = false; cell.locked = true; }
+          } else {
+            // 已有班／假：只加／取消底線，不改班別，不用先轉填格筆
+            cell.locked = !cell.locked;
+          }
           render(); return;
         }
         cell.v = state.brush; cell.auto = false;
@@ -828,7 +954,7 @@
           c.border = border;
           const font = { name: "Microsoft JhengHei", size: 11 };
           if (v === "O" || v === "AL") font.color = { argb: RED };
-          else if (v === "A1") font.color = { argb: "FF15803D" };
+          else if (v === "A1") font.color = { argb: "FF16A34A" };
           if (locked) font.underline = "single";
           c.font = font;
           return c;
